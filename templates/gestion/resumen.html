@@ -1,0 +1,243 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Resumen - Sistema de Inventario{% endblock %}
+{% block nav_resumen %}active{% endblock %}
+
+{% block content %}
+
+<h2>Resumen general de bodega</h2>
+
+<div class="stats-grid">
+
+    <div class="card success-card">
+        <h3>Productos activos</h3>
+        <div class="stat-number">{{ total_productos }}</div>
+    </div>
+
+    <div class="card">
+        <h3>Categorías</h3>
+        <div class="stat-number">{{ total_categorias }}</div>
+    </div>
+
+    <div class="card">
+        <h3>Stock total</h3>
+        <div class="stat-number">{{ stock_total }}</div>
+    </div>
+
+    <div class="card danger-card">
+        <h3>Stock bajo</h3>
+        <div class="stat-number">{{ total_stock_bajo }}</div>
+    </div>
+
+</div>
+
+
+<div class="actions">
+
+    <a href="{% url 'movimiento_nuevo' %}"
+       class="btn btn-primary">
+        + Registrar movimiento
+    </a>
+
+    <a href="{% url 'producto_nuevo' %}"
+       class="btn btn-success">
+        + Nuevo producto
+    </a>
+
+    <a href="{% url 'solicitud_nueva' %}"
+       class="btn btn-warning">
+        + Nueva solicitud
+    </a>
+
+</div>
+
+
+<div class="card" style="margin-bottom: 25px;">
+
+    <h3>Solicitudes pendientes</h3>
+
+    {% if solicitudes_pendientes > 0 %}
+
+        <p>
+            Actualmente existen
+            <strong>{{ solicitudes_pendientes }}</strong>
+            solicitudes pendientes.
+        </p>
+
+        <br>
+
+        <a href="{% url 'solicitudes' %}"
+           class="btn btn-primary">
+            Ver solicitudes
+        </a>
+
+    {% else %}
+
+        <p>No existen solicitudes pendientes.</p>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card" style="margin-bottom: 25px;">
+
+    <h3>Productos con stock bajo</h3>
+
+    {% if productos_stock_bajo %}
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Producto</th>
+                    <th>Stock actual</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for producto in productos_stock_bajo %}
+
+                <tr>
+                    <td>{{ producto.codigo }}</td>
+
+                    <td>{{ producto.nombre }}</td>
+
+                    <td>{{ producto.stock_actual }}</td>
+
+                    <td>
+                        <span class="badge badge-danger">
+                            Stock bajo
+                        </span>
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    {% else %}
+
+        <p>No existen productos con stock bajo.</p>
+
+    {% endif %}
+
+</div>
+
+
+<div class="card" style="margin-bottom: 25px;">
+
+    <h3>Resumen por categoría</h3>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Categoría</th>
+                <th>Productos</th>
+                <th>Stock</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for categoria in resumen_categorias %}
+
+            <tr>
+                <td>{{ categoria.nombre }}</td>
+                <td>{{ categoria.productos }}</td>
+                <td>{{ categoria.stock }}</td>
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="3">
+                    No existen categorías registradas.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<div class="card">
+
+    <h3>Últimos movimientos</h3>
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for movimiento in ultimos_movimientos %}
+
+            <tr>
+
+                <td>
+                    {{ movimiento.fecha|date:"d/m/Y H:i" }}
+                </td>
+
+                <td>
+                    {{ movimiento.producto.nombre }}
+                </td>
+
+                <td>
+
+                    {% if movimiento.tipo == 'ENTRADA' %}
+
+                        <span class="badge badge-success">
+                            Entrada
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Salida
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ movimiento.cantidad }}
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="4">
+                    No existen movimientos registrados.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

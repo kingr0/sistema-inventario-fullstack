@@ -1,0 +1,108 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Movimientos - Sistema de Inventario{% endblock %}
+{% block nav_movimientos %}active{% endblock %}
+
+{% block content %}
+
+<h2>Movimientos de inventario</h2>
+
+<div class="actions">
+
+    <a href="{% url 'movimiento_nuevo' %}"
+       class="btn btn-success">
+        + Registrar movimiento
+    </a>
+
+</div>
+
+<div class="card">
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Producto</th>
+                <th>Tipo</th>
+                <th>Cantidad</th>
+                <th>Responsable</th>
+                <th>Observación</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for movimiento in movimientos %}
+
+            <tr>
+
+                <td>
+                    {{ movimiento.fecha|date:"d/m/Y H:i" }}
+                </td>
+
+                <td>
+                    {{ movimiento.producto.nombre }}
+                </td>
+
+                <td>
+
+                    {% if movimiento.tipo == 'ENTRADA' %}
+
+                        <span class="badge badge-success">
+                            Entrada
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Salida
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+                    {{ movimiento.cantidad }}
+                </td>
+
+                <td>
+
+                    {% if movimiento.responsable %}
+                        {{ movimiento.responsable }}
+                    {% else %}
+                        Sin responsable
+                    {% endif %}
+
+                </td>
+
+                <td>
+
+                    {% if movimiento.observacion %}
+                        {{ movimiento.observacion }}
+                    {% else %}
+                        Sin observación
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="6">
+                    No existen movimientos registrados.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

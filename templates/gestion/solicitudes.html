@@ -1,0 +1,120 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Solicitudes - Sistema de Inventario{% endblock %}
+{% block nav_solicitudes %}active{% endblock %}
+
+{% block content %}
+
+<h2>Solicitudes</h2>
+
+<div class="actions">
+    <a href="{% url 'solicitud_nueva' %}" class="btn btn-success">
+        + Nueva solicitud
+    </a>
+</div>
+
+<div class="card">
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Título</th>
+                <th>Usuario</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for solicitud in solicitudes %}
+
+            <tr>
+
+                <td>
+                    {{ solicitud.fecha_creacion|date:"d/m/Y H:i" }}
+                </td>
+
+                <td>
+                    {{ solicitud.titulo }}
+                </td>
+
+                <td>
+                    {{ solicitud.usuario.username }}
+                </td>
+
+                <td>
+
+                    {% if solicitud.prioridad == 'ALTA' %}
+
+                        <span class="badge badge-danger">
+                            Alta
+                        </span>
+
+                    {% elif solicitud.prioridad == 'MEDIA' %}
+
+                        <span class="badge badge-warning">
+                            Media
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-info">
+                            Baja
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+
+                    {% if solicitud.estado == 'PENDIENTE' %}
+
+                        <span class="badge badge-warning">
+                            Pendiente
+                        </span>
+
+                    {% elif solicitud.estado == 'APROBADA' %}
+
+                        <span class="badge badge-info">
+                            Aprobada
+                        </span>
+
+                    {% elif solicitud.estado == 'COMPLETADA' %}
+
+                        <span class="badge badge-success">
+                            Completada
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-danger">
+                            Rechazada
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="5">
+                    No existen solicitudes registradas.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

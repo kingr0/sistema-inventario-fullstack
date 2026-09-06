@@ -1,0 +1,177 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Productos - Sistema de Inventario{% endblock %}
+{% block nav_productos %}active{% endblock %}
+
+{% block content %}
+
+<h2>Productos de bodega</h2>
+
+<div class="actions">
+
+    <a href="{% url 'producto_nuevo' %}"
+       class="btn btn-success">
+        + Nuevo producto
+    </a>
+
+</div>
+
+
+<form method="get" class="filters">
+
+    <div style="flex: 1; min-width: 200px;">
+        <label>Buscar producto</label>
+
+        <input
+            type="text"
+            name="q"
+            value="{{ q }}"
+            placeholder="Código o nombre"
+        >
+    </div>
+
+
+    <div style="flex: 1; min-width: 200px;">
+        <label>Categoría</label>
+
+        <select name="categoria">
+
+            <option value="">
+                Todas las categorías
+            </option>
+
+            {% for categoria in categorias %}
+
+                <option
+                    value="{{ categoria.id }}"
+                    {% if categoria_id == categoria.id|stringformat:"s" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ categoria.nombre }}
+                </option>
+
+            {% endfor %}
+
+        </select>
+    </div>
+
+
+    <div style="display: flex; align-items: end; gap: 8px;">
+
+        <button
+            type="submit"
+            class="btn btn-primary">
+            Buscar
+        </button>
+
+        <a
+            href="{% url 'productos' %}"
+            class="btn btn-secondary">
+            Limpiar
+        </a>
+
+    </div>
+
+</form>
+
+
+<div class="card">
+
+    <table>
+
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Stock actual</th>
+                <th>Stock mínimo</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            {% for producto in productos %}
+
+            <tr>
+
+                <td>
+                    {{ producto.codigo }}
+                </td>
+
+                <td>
+                    {{ producto.nombre }}
+                </td>
+
+                <td>
+                    {% if producto.categoria %}
+                        {{ producto.categoria.nombre }}
+                    {% else %}
+                        Sin categoría
+                    {% endif %}
+                </td>
+
+                <td>
+                    {{ producto.stock_actual }}
+                </td>
+
+                <td>
+                    {{ producto.stock_minimo }}
+                </td>
+
+                <td>
+
+                    {% if not producto.activo %}
+
+                        <span class="badge badge-warning">
+                            Inactivo
+                        </span>
+
+                    {% elif producto.stock_bajo %}
+
+                        <span class="badge badge-danger">
+                            Stock bajo
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge badge-success">
+                            Disponible
+                        </span>
+
+                    {% endif %}
+
+                </td>
+
+                <td>
+
+                    <a
+                        href="{% url 'producto_editar' producto.id %}"
+                        class="btn btn-warning">
+                        Editar
+                    </a>
+
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+                <td colspan="7">
+                    No se encontraron productos.
+                </td>
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

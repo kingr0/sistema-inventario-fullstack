@@ -1,0 +1,83 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}{{ titulo }} - Sistema de Inventario{% endblock %}
+{% block nav_productos %}active{% endblock %}
+
+{% block content %}
+
+<h2>{{ titulo }}</h2>
+
+<div class="form-card">
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        {% for field in form %}
+
+            <div class="form-group">
+
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.help_text %}
+                    <small>
+                        {{ field.help_text }}
+                    </small>
+                {% endif %}
+
+                {% if field.errors %}
+                    {{ field.errors }}
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+        <div class="actions">
+
+            <button
+                type="submit"
+                class="btn btn-success">
+                Guardar producto
+            </button>
+
+            <a
+                href="{% url 'productos' %}"
+                class="btn btn-secondary">
+                Cancelar
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+<div class="card" style="margin-top: 20px;">
+
+    <h3>Información del producto</h3>
+
+    <p>
+        El <strong>stock mínimo</strong> se utiliza para generar
+        alertas cuando quedan pocas unidades.
+    </p>
+
+    <br>
+
+    <p>
+        Si desmarcas <strong>Producto activo</strong>,
+        el producto quedará registrado pero se considerará inactivo
+        dentro del sistema.
+    </p>
+
+</div>
+
+{% endblock %}

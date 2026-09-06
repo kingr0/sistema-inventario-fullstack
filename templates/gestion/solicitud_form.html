@@ -1,0 +1,55 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Nueva solicitud - Sistema de Inventario{% endblock %}
+{% block nav_solicitudes %}active{% endblock %}
+
+{% block content %}
+
+<h2>Nueva solicitud</h2>
+
+<div class="form-card">
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        {% for field in form %}
+
+            <div class="form-group">
+
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.errors %}
+                    {{ field.errors }}
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+        <div class="actions">
+
+            <button type="submit" class="btn btn-success">
+                Guardar solicitud
+            </button>
+
+            <a href="{% url 'solicitudes' %}"
+               class="btn btn-secondary">
+                Cancelar
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

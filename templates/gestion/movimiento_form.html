@@ -1,0 +1,80 @@
+{% extends 'gestion/base.html' %}
+
+{% block title %}Registrar movimiento - Sistema de Inventario{% endblock %}
+{% block nav_movimientos %}active{% endblock %}
+
+{% block content %}
+
+<h2>Registrar movimiento de inventario</h2>
+
+<div class="form-card">
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            {{ form.non_field_errors }}
+        {% endif %}
+
+        {% for field in form %}
+
+            <div class="form-group">
+
+                <label for="{{ field.id_for_label }}">
+                    {{ field.label }}
+                </label>
+
+                {{ field }}
+
+                {% if field.help_text %}
+                    <small>
+                        {{ field.help_text }}
+                    </small>
+                {% endif %}
+
+                {% if field.errors %}
+                    {{ field.errors }}
+                {% endif %}
+
+            </div>
+
+        {% endfor %}
+
+        <div class="actions">
+
+            <button type="submit"
+                    class="btn btn-success">
+                Guardar movimiento
+            </button>
+
+            <a href="{% url 'movimientos' %}"
+               class="btn btn-secondary">
+                Cancelar
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+<div class="card" style="margin-top: 20px;">
+
+    <h3>Importante</h3>
+
+    <p>
+        En una <strong>entrada</strong>, el stock del producto aumenta.
+    </p>
+
+    <p>
+        En una <strong>salida</strong>, el stock disminuye.
+    </p>
+
+    <p>
+        El sistema no permite registrar una salida mayor al stock disponible.
+    </p>
+
+</div>
+
+{% endblock %}
