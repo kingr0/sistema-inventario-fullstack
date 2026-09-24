@@ -1,17 +1,36 @@
+# Entorno virtual
 .venv/
 venv/
 env/
-__pycache__/
-*.py[cod]
-*.sqlite3
-*.db
+
+# Variables de entorno (contiene SECRET_KEY y otros datos sensibles)
 .env
 .env.*
 !.env.example
-.pytest_cache/
-.coverage
-htmlcov/
-.idea/
-.vscode/
+*.sqlite3
+*.sqlite3-*
+*.db
 *.log
+*.pem
+*.key
+media/
+staticfiles/
+.pytest_cache/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Base de datos local
+db.sqlite3
+
+# Archivos de VS Code
+.vscode/
+
+# Archivos del sistema operativo
 Thumbs.db
+.DS_Store
+
+# Migraciones
+# */migrations/*.py
