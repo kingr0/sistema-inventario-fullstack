@@ -37,6 +37,32 @@ class ProductoBodega(models.Model):
     def stock_bajo(self):
         return self.stock_actual <= self.stock_minimo
 
+    def aplicar_movimiento(self, tipo, cantidad):
+        """
+        Aplica el efecto de un movimiento (ENTRADA o SALIDA) sobre el stock.
+        Lanza ValueError si no hay stock suficiente para una SALIDA.
+        """
+        if tipo == 'ENTRADA':
+            self.stock_actual += cantidad
+
+        elif tipo == 'SALIDA':
+            if cantidad > self.stock_actual:
+                raise ValueError('Stock insuficiente.')
+            self.stock_actual -= cantidad
+
+        self.save()
+
+    def revertir_movimiento(self, tipo, cantidad):
+        """
+        Revierte el efecto de un movimiento ya aplicado (usado al editar/eliminar).
+        """
+        if tipo == 'ENTRADA':
+            self.stock_actual -= cantidad
+        elif tipo == 'SALIDA':
+            self.stock_actual += cantidad
+
+        self.save()
+
     class Meta:
         verbose_name = 'Producto'
         verbose_name_plural = 'Productos'

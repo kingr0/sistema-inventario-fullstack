@@ -38,7 +38,7 @@ class ProductoAPITest(TestCase):
         )
 
     def test_listar_productos(self):
-        response = self.client.get('/api/productos/')
+        response = self.client.get('/api/v1/productos/')
 
         self.assertEqual(
             response.status_code,
@@ -57,7 +57,7 @@ class ProductoAPITest(TestCase):
         }
 
         response = self.client.post(
-            '/api/productos/',
+            '/api/v1/productos/',
             data
         )
 
@@ -75,7 +75,7 @@ class ProductoAPITest(TestCase):
     def test_obtener_producto(self):
 
         response = self.client.get(
-            f'/api/productos/{self.producto.id}/'
+            f'/api/v1/productos/{self.producto.id}/'
         )
 
         self.assertEqual(
@@ -91,7 +91,7 @@ class ProductoAPITest(TestCase):
     def test_eliminar_producto(self):
 
         response = self.client.delete(
-            f'/api/productos/{self.producto.id}/'
+            f'/api/v1/productos/{self.producto.id}/'
         )
 
         self.assertEqual(
@@ -142,7 +142,7 @@ class MovimientoAPITest(TestCase):
     def test_listar_movimientos(self):
 
         response = self.client.get(
-            '/api/movimientos/'
+            '/api/v1/movimientos/'
         )
 
         self.assertEqual(
@@ -161,7 +161,7 @@ class MovimientoAPITest(TestCase):
         }
 
         response = self.client.post(
-            '/api/movimientos/',
+            '/api/v1/movimientos/',
             data
         )
 
@@ -188,7 +188,7 @@ class MovimientoAPITest(TestCase):
         }
 
         response = self.client.post(
-            '/api/movimientos/',
+            '/api/v1/movimientos/',
             data
         )
 
@@ -215,13 +215,93 @@ class MovimientoAPITest(TestCase):
         }
 
         response = self.client.post(
-            '/api/movimientos/',
+            '/api/v1/movimientos/',
             data
         )
 
         self.assertEqual(
             response.status_code,
             status.HTTP_400_BAD_REQUEST
+        )
+
+        self.producto.refresh_from_db()
+
+        self.assertEqual(
+            self.producto.stock_actual,
+            10
+        )
+
+    def test_editar_movimiento_recalcula_stock(self):
+        """
+        Al editar un movimiento (cambiar la cantidad), el stock
+        debe reflejar SOLO el efecto del nuevo valor, revirtiendo
+        primero el efecto del movimiento anterior.
+        """
+
+        # Se crea el movimiento A TRAVÉS DE LA API (no directo por el ORM),
+        # para que se aplique la lógica de negocio del serializer.
+        create_response = self.client.post(
+            '/api/v1/movimientos/',
+            {
+                'producto': self.producto.id,
+                'tipo': 'ENTRADA',
+                'cantidad': 5,
+                'responsable': 'Test'
+            }
+        )
+
+        movimiento_id = create_response.data['id']
+
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock_actual, 15)
+
+        response = self.client.patch(
+            f'/api/v1/movimientos/{movimiento_id}/',
+            {'cantidad': 8},
+            format='json'
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK
+        )
+
+        self.producto.refresh_from_db()
+
+        # 15 (tras la entrada inicial) - 5 (revierte entrada vieja) + 8 (nueva entrada) = 18
+        self.assertEqual(
+            self.producto.stock_actual,
+            18
+        )
+
+    def test_eliminar_movimiento_revierte_stock(self):
+        """
+        Al eliminar un movimiento, su efecto sobre el stock
+        debe revertirse.
+        """
+
+        create_response = self.client.post(
+            '/api/v1/movimientos/',
+            {
+                'producto': self.producto.id,
+                'tipo': 'ENTRADA',
+                'cantidad': 5,
+                'responsable': 'Test'
+            }
+        )
+
+        movimiento_id = create_response.data['id']
+
+        self.producto.refresh_from_db()
+        self.assertEqual(self.producto.stock_actual, 15)
+
+        response = self.client.delete(
+            f'/api/v1/movimientos/{movimiento_id}/'
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_204_NO_CONTENT
         )
 
         self.producto.refresh_from_db()
@@ -251,7 +331,7 @@ class CategoriaAPITest(TestCase):
     def test_listar_categorias(self):
 
         response = self.client.get(
-            '/api/categorias/'
+            '/api/v1/categorias/'
         )
 
         self.assertEqual(
@@ -267,7 +347,7 @@ class CategoriaAPITest(TestCase):
         }
 
         response = self.client.post(
-            '/api/categorias/',
+            '/api/v1/categorias/',
             data
         )
 
@@ -303,4 +383,98 @@ class SolicitudTest(TestCase):
         self.assertEqual(
             solicitud.prioridad,
             'ALTA'
+        )
+
+
+class AutenticacionYPermisosTest(TestCase):
+    """
+    Pruebas específicas para el punto de la lista:
+    'Proteger la API mediante autenticación y permisos'.
+    Verifican que la API NO responda sin credenciales válidas.
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+
+        self.categoria = CategoriaInsumo.objects.create(
+            nombre='Materiales de aseo'
+        )
+
+        self.producto = ProductoBodega.objects.create(
+            codigo='ASE-001',
+            nombre='Alcohol gel 1 litro',
+            stock_actual=10,
+            stock_minimo=5,
+            activo=True,
+            categoria=self.categoria
+        )
+
+    def test_listar_productos_sin_token_falla(self):
+        """
+        Sin autenticación, la API debe rechazar la petición.
+        Nota: DRF devuelve 403 (no 401) cuando hay más de una clase de
+        autenticación configurada y la primera (SessionAuthentication)
+        no soporta el header 'WWW-Authenticate'. Es el comportamiento
+        estándar de DRF, no un error de configuración.
+        """
+
+        response = self.client.get('/api/v1/productos/')
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
+
+    def test_crear_producto_sin_token_falla(self):
+        """Sin autenticación, no se debe poder crear nada."""
+
+        data = {
+            'codigo': 'ASE-888',
+            'nombre': 'Producto no autorizado',
+            'stock_actual': 1,
+            'stock_minimo': 1,
+            'activo': True,
+            'categoria': self.categoria.id
+        }
+
+        response = self.client.post(
+            '/api/v1/productos/',
+            data
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
+
+        self.assertFalse(
+            ProductoBodega.objects.filter(
+                codigo='ASE-888'
+            ).exists()
+        )
+
+    def test_eliminar_movimiento_sin_token_falla(self):
+        """Sin autenticación, no se debe poder eliminar un movimiento."""
+
+        movimiento = MovimientoInventario.objects.create(
+            producto=self.producto,
+            tipo='ENTRADA',
+            cantidad=5,
+            responsable='Test'
+        )
+
+        response = self.client.delete(
+            f'/api/v1/movimientos/{movimiento.id}/'
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_403_FORBIDDEN
+        )
+
+        # El movimiento no debería haberse borrado
+        self.assertTrue(
+            MovimientoInventario.objects.filter(
+                id=movimiento.id
+            ).exists()
         )

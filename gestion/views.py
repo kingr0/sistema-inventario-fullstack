@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
 from django.db.models import Sum, Q, F
+from django.db import transaction
 
 from .models import (
     ProductoBodega,
@@ -21,7 +22,8 @@ from rest_framework import viewsets
 from .serializers import (
     ProductoSerializer,
     MovimientoSerializer,
-    CategoriaSerializer
+    CategoriaSerializer,
+    SolicitudSerializer
 )
 
 
@@ -322,24 +324,18 @@ def movimiento_nuevo(request):
 
 
             # ------------------------------------------------
-            # ENTRADA DE INVENTARIO
+            # APLICAR EL MOVIMIENTO (lógica centralizada en el modelo)
             # ------------------------------------------------
 
-            if mov.tipo == 'ENTRADA':
-
-                producto.stock_actual += mov.cantidad
-
-
-            # ------------------------------------------------
-            # SALIDA DE INVENTARIO
-            # ------------------------------------------------
-
-            elif mov.tipo == 'SALIDA':
-
-                producto.stock_actual -= mov.cantidad
-
-
-            producto.save()
+            try:
+                producto.aplicar_movimiento(mov.tipo, mov.cantidad)
+            except ValueError as e:
+                messages.error(request, str(e))
+                return render(
+                    request,
+                    'gestion/movimiento_form.html',
+                    {'form': form}
+                )
 
             mov.save()
 
@@ -468,6 +464,9 @@ class ProductoViewSet(
 
     serializer_class = ProductoSerializer
 
+    filterset_fields = ['categoria', 'activo']
+    search_fields = ['nombre', 'codigo']
+
 
 # ============================================================
 # API REST - MOVIMIENTOS
@@ -482,3 +481,30 @@ class MovimientoViewSet(
     )
 
     serializer_class = MovimientoSerializer
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+
+        producto = ProductoBodega.objects.select_for_update().get(
+            pk=instance.producto.pk
+        )
+
+        # Revertir el efecto del movimiento antes de eliminarlo
+        producto.revertir_movimiento(instance.tipo, instance.cantidad)
+
+        instance.delete()
+
+
+# ============================================================
+# API REST - SOLICITUDES
+# ============================================================
+
+class SolicitudViewSet(
+    viewsets.ModelViewSet
+):
+
+    queryset = Solicitud.objects.all().order_by(
+        '-fecha_creacion'
+    )
+
+    serializer_class = SolicitudSerializer
